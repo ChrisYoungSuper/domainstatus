@@ -253,3 +253,137 @@ export default function DomainChecker() {
               <div
                 className="bg-gradient-to-r from-blue-500 to-purple-600 h-4 rounded-full transition-all duration-500 shadow-lg"
                 style={{ width: `${(progress.current / progress.total) * 100}%` }}
+              />
+            </div>
+            <div className="mt-3 text-center text-sm text-gray-500">
+              正在高速检测中... (15个并发)
+            </div>
+          </div>
+        )}
+
+        {/* Statistics Cards */}
+        {results.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-xl p-6 text-white transform hover:scale-105 transition-all">
+              <div className="text-blue-100 mb-2 text-sm font-semibold">总计</div>
+              <div className="text-5xl font-black">{results.length}</div>
+            </div>
+            
+            <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-xl p-6 text-white transform hover:scale-105 transition-all">
+              <div className="flex items-center gap-2 text-green-100 mb-2 text-sm font-semibold">
+                <Check size={18} />
+                可达
+              </div>
+              <div className="text-5xl font-black">{reachableCount}</div>
+            </div>
+            
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-xl p-6 text-white transform hover:scale-105 transition-all">
+              <div className="flex items-center gap-2 text-purple-100 mb-2 text-sm font-semibold">
+                <Filter size={18} />
+                纯净
+              </div>
+              <div className="text-5xl font-black">{cleanDomainsCount}</div>
+            </div>
+            
+            <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-xl p-6 text-white transform hover:scale-105 transition-all">
+              <div className="flex items-center gap-2 text-red-100 mb-2 text-sm font-semibold">
+                <X size={18} />
+                不可达
+              </div>
+              <div className="text-5xl font-black">{unreachableCount}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Results Table */}
+        {results.length > 0 && (
+          <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl overflow-hidden">
+            <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+              <h3 className="text-2xl font-bold text-gray-800">检测结果</h3>
+              <p className="text-gray-600 mt-1">共 {results.length} 个域名，其中 {cleanDomainsCount} 个纯净可用</p>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-100 border-b-2 border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">域名</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">协议</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">状态码</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">状态</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">重定向</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">响应</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {results.map((result, index) => {
+                    const isClean = result.status === 'reachable' && !result.redirected;
+                    return (
+                      <tr 
+                        key={index} 
+                        className={`hover:bg-gray-50 transition-colors ${isClean ? 'bg-green-50/50' : ''}`}
+                      >
+                        <td className="px-6 py-4 text-sm font-mono text-gray-800 font-semibold">
+                          {result.domain}
+                          {isClean && (
+                            <span className="ml-2 text-xs bg-green-500 text-white px-2 py-1 rounded-full">✓ 纯净</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${
+                            result.protocol === 'https' ? 'bg-green-100 text-green-800' : 
+                            result.protocol === 'http' ? 'bg-yellow-100 text-yellow-800' : 
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {result.protocol.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${
+                            result.statusCode === 200 ? 'bg-green-100 text-green-800' : 
+                            result.statusCode >= 300 && result.statusCode < 400 ? 'bg-blue-100 text-blue-800' :
+                            result.statusCode >= 400 ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {result.statusCode}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className={`flex items-center gap-2 font-semibold ${
+                            result.status === 'reachable' ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {result.status === 'reachable' ? (
+                              <><Check size={16} /> 可达</>
+                            ) : (
+                              <><X size={16} /> 失败</>
+                            )}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          {result.redirected ? (
+                            <span className="text-orange-600 font-semibold">是</span>
+                          ) : (
+                            <span className="text-gray-400">否</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600 flex items-center gap-2">
+                          <Clock size={14} />
+                          <span className="font-mono">{result.responseTime}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="mt-8 text-center text-white/60 text-sm">
+          <p>批量域名检测工具 · 快速高效 · 智能过滤</p>
+        </div>
+      </div>
+    </div>
+  );
+}
